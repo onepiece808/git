@@ -534,7 +534,7 @@ void fscache_disable(void)
 			cache->lstat_requests, cache->opendir_requests,
 			cache->fscache_requests, cache->fscache_misses);
 		mem_pool_discard(&cache->mem_pool, 0);
-		hashmap_clear(&cache->map);
+		hashmap_free(&cache->map);
 		free(cache);
 	}
 
