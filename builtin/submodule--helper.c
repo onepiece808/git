@@ -2834,12 +2834,12 @@ static const char *parse_token(const char *cp, int *len)
 	char *str;
 
 	start = p;
-	while (*p != ' ')
+	while (*p && *p != ' ')
 		p++;
 	end = p;
 	str = xstrndup(start, end - start);
 
-	while(*p == ' ')
+	while(*p && *p == ' ')
 		p++;
 
 	return str;
