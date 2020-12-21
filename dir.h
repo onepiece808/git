@@ -370,6 +370,15 @@ int read_directory(struct dir_struct *, struct index_state *istate,
 		   const char *path, int len,
 		   const struct pathspec *pathspec);
 
+enum exist_status {
+	is_cache_absent = 0,
+	is_cache_directory,
+	is_cache_gitdir
+};
+
+enum exist_status directory_exists_in_index(struct index_state *istate,
+					    const char *dirname, int len);
+
 enum pattern_match_result {
 	UNDECIDED = -1,
 	NOT_MATCHED = 0,

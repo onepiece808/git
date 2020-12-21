@@ -1655,12 +1655,6 @@ struct dir_entry *dir_add_ignored(struct dir_struct *dir,
 	return dir->ignored[dir->ignored_nr++] = dir_entry_new(pathname, len);
 }
 
-enum exist_status {
-	index_nonexistent = 0,
-	index_directory,
-	index_gitdir
-};
-
 /*
  * Do not use the alphabetically sorted index to look up
  * the directory name; instead, use the case insensitive
@@ -1672,13 +1666,13 @@ static enum exist_status directory_exists_in_index_icase(struct index_state *ist
 	struct cache_entry *ce;
 
 	if (index_dir_exists(istate, dirname, len))
-		return index_directory;
+		return is_cache_directory;
 
 	ce = index_file_exists(istate, dirname, len, ignore_case);
 	if (ce && S_ISGITLINK(ce->ce_mode))
-		return index_gitdir;
+		return is_cache_gitdir;
 
-	return index_nonexistent;
+	return is_cache_absent;
 }
 
 /*
@@ -1688,8 +1682,8 @@ static enum exist_status directory_exists_in_index_icase(struct index_state *ist
  * the files it contains) will sort with the '/' at the
  * end.
  */
-static enum exist_status directory_exists_in_index(struct index_state *istate,
-						   const char *dirname, int len)
+enum exist_status directory_exists_in_index(struct index_state *istate,
+					    const char *dirname, int len)
 {
 	int pos;
 
@@ -1709,11 +1703,11 @@ static enum exist_status directory_exists_in_index(struct index_state *istate,
 		if (endchar > '/')
 			break;
 		if (endchar == '/')
-			return index_directory;
+			return is_cache_directory;
 		if (!endchar && S_ISGITLINK(ce->ce_mode))
-			return index_gitdir;
+			return is_cache_gitdir;
 	}
-	return index_nonexistent;
+	return is_cache_absent;
 }
 
 /*
@@ -1767,11 +1761,11 @@ static enum path_treatment treat_directory(struct dir_struct *dir,
 	/* The "len-1" is to strip the final '/' */
 	enum exist_status status = directory_exists_in_index(istate, dirname, len-1);
 
-	if (status == index_directory)
+	if (status == is_cache_directory)
 		return path_recurse;
-	if (status == index_gitdir)
+	if (status == is_cache_gitdir)
 		return path_none;
-	if (status != index_nonexistent)
+	if (status != is_cache_absent)
 		BUG("Unhandled value for directory_exists_in_index: %d\n", status);
 
 	/*
@@ -2190,7 +2184,7 @@ static enum path_treatment treat_path(struct dir_struct *dir,
 	if ((dir->flags & DIR_COLLECT_KILLED_ONLY) &&
 	    (dtype == DT_DIR) &&
 	    !has_path_in_index &&
-	    (directory_exists_in_index(istate, path->buf, path->len) == index_nonexistent))
+	    (directory_exists_in_index(istate, path->buf, path->len) == is_cache_absent))
 		return path_none;
 
 	excluded = is_excluded(dir, istate, path->buf, &dtype);
