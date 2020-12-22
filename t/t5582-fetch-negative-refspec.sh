@@ -186,4 +186,28 @@ test_expect_success "fetch --prune with negative refspec" '
 	)
 '
 
+test_expect_success "push with matching : and negative refspec" '
+	test_config -C two remote.one.push : &&
+	# Fails to push master w/ tip behind counterpart
+	test_must_fail git -C two push one &&
+
+	# If master is in negative refspec, then the command will not attempt
+	# to push and succeed.
+	# We do not need test_config here as we are updating remote.one.push
+	# again. The teardown of the first test_config will do --unset-all
+	git -C two config --add remote.one.push ^refs/heads/master &&
+	git -C two push one
+'
+
+test_expect_success "push with matching +: and negative refspec" '
+	test_config -C two remote.one.push +: &&
+	# Fails to push master w/ tip behind counterpart
+	test_must_fail git -C two push one &&
+
+	# If master is in negative refspec, then the command will not attempt
+	# to push and succeed
+	git -C two config --add remote.one.push ^refs/heads/master &&
+	git -C two push one
+'
+
 test_done
